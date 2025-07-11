@@ -17,7 +17,7 @@ function App() {
   //   queryParams: object,            //  {arg:1234, operation "exp"}
   // }
 
-  const [page, setPage] = useState("calc");
+  const [page, setPage] = useState("game");
   const [history, setHistory] = useState([] as Array<string>);
 
   const navigate = (href:string) => { // добавление в историю и переход
