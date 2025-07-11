@@ -20,15 +20,19 @@ function tileBackground(tileValue: number){
     : tileValue == 16    ?       "#E79B73"
     : tileValue == 32    ?       "#E4846E"
     : tileValue == 64    ?       "#E26A51"
-    : tileValue == 128   ?       "#444"
-    : tileValue == 256   ?       "#444"
-    : tileValue == 512   ?       "#444"
-    : tileValue == 1024  ?       "#444"
-    : tileValue == 2048  ?       "#444"
-    : tileValue == 4096  ?       "#444"
-    :                            "#444";
-
+    : tileValue == 128   ?       "#E2CA85"
+    : tileValue == 256   ?       "#E2C87A"
+    : tileValue == 512   ?       "#E2C46C"
+    : tileValue == 1024  ?       "#E4C564"
+    : tileValue == 2048  ?       "#E3C35A"
+    : tileValue == 4096  ?       "#6A665D"
+    : tileValue == 8192  ?       "#83BF3F"
+    : tileValue == 16384 ?       "#7BBA34"
+    : tileValue == 32768 ?       "#76AE37"
+    : tileValue == 65536 ?       "#719941"
+    :                            "#719941";
 }
+
 function tileForeground(tileValue: number){
     return tileValue == 0?       "#BDAFA2"
     : tileValue == 2     ?       "#746C63"
@@ -37,16 +41,11 @@ function tileForeground(tileValue: number){
     : tileValue == 16    ?       "#FBF5F2"
     : tileValue == 32    ?       "#FBF5F2"
     : tileValue == 64    ?       "#FBF5F2"
-    : tileValue == 128   ?       "#fff"
-    : tileValue == 256   ?       "#fff"
-    : tileValue == 512   ?       "#fff"
-    : tileValue == 1024  ?       "#fff"
-    : tileValue == 2048  ?       "#fff"
-    : tileValue == 4096  ?       "#fff"
-    :                            "#fff";
+    : tileValue == 128   ?       "#F9F6F2"
+    : tileValue == 256   ?       "#F9F6F2"
+    :                            "#F9F6F2";
 
 }
-
 
 export default function Game(){
 
@@ -196,7 +195,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginVertical: 5,
     paddingHorizontal: 10,
-    verticalAlign: "middle"
+    verticalAlign: "middle",
+    fontWeight: 900,
   },
   topBlockSub: {
     display: "flex",
@@ -220,7 +220,8 @@ const styles = StyleSheet.create({
   },
   topBlockScoreText: {
     color: "white",
-    textAlign: "center"
+    textAlign: "center",
+    fontWeight: 700,
   },
   topBlockButtons: {
     display: "flex",
@@ -239,7 +240,8 @@ const styles = StyleSheet.create({
   },
   topBlockButtonText: {
     color: "white",
-    textAlign: "center"
+    textAlign: "center",
+    fontWeight: 700,
   },
   field: {
     borderRadius: 10,

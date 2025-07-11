@@ -1,4 +1,4 @@
-import { View , StyleSheet, Text, TouchableOpacity, useWindowDimensions} from "react-native";
+import { View , StyleSheet, Text, TouchableOpacity, useWindowDimensions, Button} from "react-native";
 import CalcButton from "./components/CalcButton";
 import { useState } from "react";
 
@@ -10,6 +10,7 @@ export default function Calc() {
   const [memory, setMemory] = useState("0");
   const [history, setHistory] = useState("");
   const [calculation, setCalculation] =useState("");
+  const [showMemoryView, setShowMemoryView] = useState(false);
 
   const onMemoryOperationPress = (title:string, data?:string)=>{
     switch(title){
@@ -29,7 +30,7 @@ export default function Calc() {
         setMemory(result);
         break;
       case "Mv" :
-        //TODO
+        setShowMemoryView(true);
         break;
     }
   };
@@ -271,14 +272,22 @@ export default function Calc() {
       <Text style={styles.title}>Калькулятор</Text>
       <Text style={styles.expression}>{history}</Text>
       <Text style={[styles.result, {fontSize : result.length < 20 ? styles.result.fontSize : styles.result.fontSize * 19 / result.length}]}>{result == "0" ? calculation : result}</Text>
+      
       <View style={styles.calcFirstRow}>
-      <CalcButton title="MC" action={onMemoryOperationPress}/>
-      <CalcButton title="MR" action={onMemoryOperationPress}/>
-      <CalcButton title="M+" action={onMemoryOperationPress}/>
-      <CalcButton title="M-" action={onMemoryOperationPress}/>
-      <CalcButton title="MS" action={onMemoryOperationPress}/>
-      <CalcButton title="Mv" action={onMemoryOperationPress}/>
+        <CalcButton title="MC" action={onMemoryOperationPress}/>
+        <CalcButton title="MR" action={onMemoryOperationPress}/>
+        <CalcButton title="M+" action={onMemoryOperationPress}/>
+        <CalcButton title="M-" action={onMemoryOperationPress}/>
+        <CalcButton title="MS" action={onMemoryOperationPress}/>
+        <CalcButton title="Mv" action={onMemoryOperationPress}/>
       </View>
+
+      {showMemoryView && (
+        <View style={styles.memoryOverlay}>
+          <Text style={styles.memoryText}>Это память</Text>
+          <CalcButton title="Закрыть" action={() => setShowMemoryView(false)} />
+        </View>
+      )}
 
       <View style={styles.calcButtonRow}>
         <CalcButton title="%"         action={onOperationPress} data="percent"/>
@@ -286,6 +295,7 @@ export default function Calc() {
         <CalcButton title="C"         action={onOperationPress} data="clear"/>
         <CalcButton title={"\u232B"}  action={onOperationPress} data="backspace"/>
       </View>
+
 
       <View style={styles.calcButtonRow}>
         <CalcButton title={'\u00B9/\u{1D465}'}      action={onOperationPress} data="inverse" />
@@ -432,4 +442,25 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 4
   },
+
+
+  memoryOverlay: {
+  position: 'absolute',
+  top: 208, // отступ от верхушки calcContainer до calcFirstRow
+  left: 5,
+  right: 5,
+  bottom: 2,
+  backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  zIndex: 10,
+  padding: 20,
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: 5,
+},
+
+  memoryText: {
+    color: '#fff',
+    fontSize: 20,
+    marginBottom: 20,
+  }
 });
