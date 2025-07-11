@@ -33,24 +33,7 @@ export default function Calc() {
         break;
     }
   };
-  const getSecondOperand = (expr:String)=> {
-  // Удаляем "=" на конце
-  expr = expr.trim().replace(/=$/, "");
-
-  // Ищем знак между числами (поддержка + - × ÷)
-  const match = expr.match(/(.+)([+\-×÷])\(?(-?\d+)\)?$/);
-
-  if (match) {
-    let operator = match[2]; // +, -, ×, ÷
-    let operand = match[3];  // уже содержит минус если был
-
-    if (operator === '+') return operand.startsWith('-') ? operand : '+' + operand;
-    if (operator === '-') return operand.startsWith('-') ? operand : '-' + operand;
-    if (operator === '×' || operator === '÷') return operand;
-  }
-
-  return null; // если не удалось разобрать
-  }
+ 
   const onOperationPress = (title: string, data?: string) => {
   switch (data) {
     case "clear":{
@@ -178,8 +161,8 @@ export default function Calc() {
     case "square":{
       let res = (Math.pow(Number(result),2)).toString();
       setCalculation(res);
-      setResult(res);
       setHistory(result+"\u00B2")
+      setResult("0");
       break;
     }
     case "sqrt":{
@@ -187,8 +170,8 @@ export default function Calc() {
       
       let res =Math.sqrt(Number(result)).toString();
       setCalculation(res);
-      setResult(res);
       setHistory("\u00B2\u221A"+result)
+      setResult("0");
       break; 
     }
     case "percent":{
@@ -206,21 +189,21 @@ export default function Calc() {
           res = (left - ((left*right)/100)).toString();
           break;
         case "\u00D7":
-          res = (left * ((left*right)/100)).toString();
+          res = (left * ((right)/100)).toString();
           break;
         case "\u00F7":
-          res = right !== 0 ? (left / ((left*right)/100)).toString() : "Error";
+          res = right !== 0 ? (left / ((right)/100)).toString() : "Error";
           break;
         default:
           res = result;
       }
-      setHistory(history + (Number(result)/100).toString() + "\u003D");
-      setResult(res);
+      setHistory(history + result + "%"+ "\u003D");
+      setResult("0");
       setCalculation(res);
       break; 
     }
     case "equal":{
-
+      
       if (!calculation || !history || history.includes("\u003D")) return;
 
       let operator = history.slice(-1);
@@ -262,7 +245,7 @@ export default function Calc() {
 
     if (history.includes("\u003D")){  
       setCalculation("");
-      setHistory("0");
+      setHistory("");
     };
 
     if (result.length < maxResultDigits + extraChars){
