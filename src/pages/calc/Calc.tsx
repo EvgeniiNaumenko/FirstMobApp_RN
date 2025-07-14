@@ -21,16 +21,19 @@ export default function Calc() {
         setResult(memory);
         break;
       case "M+" :
-        setMemory((Number(memory)+Number(result)).toString());
+        setMemory((Number(memory)+Number(result == "0" ? calculation : result)).toString());
         break;
       case "M-" :
-        setMemory((Number(memory)-Number(result)).toString());
+        setMemory((Number(memory)-Number(result == "0" ? calculation : result)).toString());
         break;
       case "MS" :
-        setMemory(result);
+        setMemory(result == "0" ? calculation : result);
         break;
       case "Mv" :
-        setShowMemoryView(true);
+        if(!showMemoryView)
+          setShowMemoryView(true);
+        else
+          setShowMemoryView(false);
         break;
     }
   };
@@ -44,7 +47,7 @@ export default function Calc() {
       break;
     }
     case "clearResult":{
-      setResult("0");
+      setResult("");
       break;
     }
     case "backspace":{
@@ -56,12 +59,27 @@ export default function Calc() {
       break;
     }
     case "inverse":{
+
+      if(result=="0" && calculation!=""){
+        setHistory("1/(" + Number(calculation).toString() + ")=");
+        var inverse = (1 / Number(calculation)).toString();
+        setCalculation(inverse);
+        setResult("0");
+        break;
+      }
+
+      if(result =="0") {
+        setCalculation("ZeroDiv");
+         break;
+      }
+
       setHistory("1/(" + Number(result).toString() + ")=");
       var inverse = (1 / Number(result)).toString();
-      setResult(inverse);
+      setResult("0");
       setCalculation(inverse);
       break;
     }
+
     case "add":{
       if(history.slice(-1)!="+" && history !="" && history!.includes("+") && history.slice(-1)!="\u003D"){
         setHistory(history.substring(0, history.length - 1)+"+");
@@ -112,11 +130,11 @@ export default function Calc() {
     }
     
     case "mul":{
-      console.log(calculation);
       if(history.slice(-1)!="\u00D7" && history !="" && history!.includes("\u00D7") && history.slice(-1)!="\u003D"){
         setHistory(history.substring(0, history.length - 1)+"\u00D7");
         break;
       }
+
       if(calculation !="" && result =="0"){
         setHistory(calculation + "\u00D7" );
         break;
@@ -135,7 +153,9 @@ export default function Calc() {
       setResult("0");
       break;
      }
+
     case "div":{
+
       if(history.slice(-1)!="\u00F7" && history !="" && history!.includes("+") && history.slice(-1)!="\u003D"){
         setHistory(history.substring(0, history.length - 1)+"\u00F7");
         break;
@@ -160,21 +180,42 @@ export default function Calc() {
       break; 
     } 
     case "square":{
+
+      if(result=="0" && calculation!=""){
+        let res = (Math.pow(Number(calculation),2)).toString();
+        setCalculation(res);
+        setHistory(calculation+"\u00B2")
+        setResult("0");
+        break;
+      }
+
       let res = (Math.pow(Number(result),2)).toString();
       setCalculation(res);
       setHistory(result+"\u00B2")
       setResult("0");
       break;
+
     }
+
     case "sqrt":{
+
       if(Number(result)<0) break;
-      
+
+      if(result=="0" && calculation!=""){
+        let res =Math.sqrt(Number(calculation)).toString();
+        setCalculation(res);
+        setHistory("\u00B2\u221A"+calculation)
+        setResult("0");
+      break; 
+
+      }
       let res =Math.sqrt(Number(result)).toString();
       setCalculation(res);
       setHistory("\u00B2\u221A"+result)
       setResult("0");
       break; 
     }
+
     case "percent":{
       if(!history || !calculation) break;
       let operator = history.slice(-1);
@@ -271,7 +312,11 @@ export default function Calc() {
     return <View style={styles.calcContainer}>
       <Text style={styles.title}>Калькулятор</Text>
       <Text style={styles.expression}>{history}</Text>
-      <Text style={[styles.result, {fontSize : result.length < 20 ? styles.result.fontSize : styles.result.fontSize * 19 / result.length}]}>{result == "0" ? calculation : result}</Text>
+      <Text style={[styles.result, {
+        fontSize : result.length < 20 ? styles.result.fontSize 
+        : styles.result.fontSize * 19 / result.length}]}>
+        {result == "0" ? calculation : result}
+        </Text>
       
       <View style={styles.calcFirstRow}>
         <CalcButton title="MC" action={onMemoryOperationPress}/>
@@ -284,8 +329,23 @@ export default function Calc() {
 
       {showMemoryView && (
         <View style={styles.memoryOverlay}>
-          <Text style={styles.memoryText}>Это память</Text>
-          <CalcButton title="Закрыть" action={() => setShowMemoryView(false)} />
+          <Text style={styles.memoryText}>{memory}</Text>
+
+          <View style={styles.memoryFirstRow}>
+            {['MC', 'M+', 'M-'].map(label => (
+              <TouchableOpacity
+                key={label}
+                style={styles.memoryButton}
+                onPress={() => onMemoryOperationPress(label)}
+              >
+                <Text style={styles.memoryButtonText}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={{ alignSelf: 'flex-end', marginTop: 'auto' }}>
+            <Button title="Закрыть" onPress={() => setShowMemoryView(false)} color="#696969ff" />
+          </View>
         </View>
       )}
 
@@ -340,9 +400,9 @@ export default function Calc() {
       <View style={{display: "flex", flexDirection: "row"}}> 
         <View style={{flex:2, display: "flex", flexDirection: "column"}}>
           <Text style={[styles.title, {margin:0}]}>Калькулятор</Text>
-          <Text style={styles.expression}>22 + 33 =</Text>
+          <Text style={styles.expression}>{history}</Text>
         </View>
-          <Text style={[styles.result,{flex:3}]}>{result}</Text>
+          <Text style={[styles.result,{flex:3}]}>{result == "0" ? calculation : result}</Text>
       </View> 
 
       <View style={styles.calcFirstRow}>
@@ -415,8 +475,6 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#202020",
     color: "#ffffff",
-
-
   },
   expression:{
     textAlign: "right",
@@ -442,25 +500,45 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 4
   },
-
-
   memoryOverlay: {
   position: 'absolute',
-  top: 208, // отступ от верхушки calcContainer до calcFirstRow
+  top: 208, 
   left: 5,
   right: 5,
   bottom: 2,
-  backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  backgroundColor: "#202020",
   zIndex: 10,
   padding: 20,
   justifyContent: 'center',
-  alignItems: 'center',
+  alignItems: "flex-end",
   borderRadius: 5,
-},
+  },
+
+  memoryFirstRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8, 
+    marginBottom: 20,
+  },
 
   memoryText: {
     color: '#fff',
+    textAlign: "left",
     fontSize: 20,
     marginBottom: 20,
-  }
+  },
+
+  memoryButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#696969ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  memoryButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
 });
