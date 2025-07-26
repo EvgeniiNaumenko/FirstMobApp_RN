@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, TouchableWithoutFeedback, useWindowDimensions, View } from "react-native";
 import { AppContext } from "../../shared/context/appContext";
-
+import Orientation, { OrientationLocker } from "react-native-orientation-locker";
+import RNFS from "react-native-fs"
 
 //swipes - жесты проведения с ограничением минимальных дистаний и скоростей
 
@@ -10,6 +11,15 @@ type eventData = {
     y:number,
     t:number
 };
+
+type FieldState = {
+    tiles: Array<number>,
+    score: number,
+    bestScore: number,
+};
+
+const N = 4;
+const maxUndo = 5;
 const distanceThreshold = 50; // минимальная длинна свайпа
 const timeThreshold = 500; // максимальный время свайпа
 let animaValue = new Animated.Value(1);
@@ -17,8 +27,8 @@ const opacityValues = Array.from({length: 16}, () => new Animated.Value(1));
 const scaleValues = Array.from({length: 16}, () => new Animated.Value(1));
 let scale = new Animated.Value(1);
 let rotate = new Animated.Value(0);
-
- const rotateInterpolate = rotate.interpolate({
+const bestScoreFileName = "best.score";
+const rotateInterpolate = rotate.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '10deg'],
   });
@@ -90,7 +100,9 @@ export default function Game(){
         16,     32,     64,     128,
         256,    512,    1024,   2048,
         4096,   8192,   16384,  32768
-    ])
+    ]);
+    const [bestScore, setBestScore] = useState(0);
+    const [history, setHistory] = useState<FieldState[]>([]);
 
 
     const tileFontSize = (tileValue: number) =>{
@@ -99,8 +111,13 @@ export default function Game(){
         : tileValue  < 1000   ?   width *0.08
         : tileValue  < 10000  ?   width *0.07
         :                         width *0.06
-    }
+    };
+
     var startData: eventData | null = null;
+
+    // useEffect(()=>{
+    //     saveBestScore();
+    // }, [bestScore]);
 
     useEffect(() => {
         Animated.sequence([
@@ -129,7 +146,56 @@ export default function Game(){
                 }),
             ])
         ]).start();
-    }, [text]);
+        if(score>bestScore){
+            setBestScore(score);
+            saveBestScore();
+        }
+    }, [score]);
+
+
+    // при старте приложения
+    useEffect(()=>{
+        //загрузка рекорда с файла
+        // const path = RNFS.DocumentDirectoryPath + bestScoreFileName;
+        // console.log(path);
+        // RNFS
+        //     .writeFile(path, bestScore.toString(), 'utf8')
+        //     .then(()=>{console.log("save is OK")})
+        //     .catch(err => console.error(err));
+
+        // RNFS.readFile(path, 'utf8')
+        // .then(content => {
+        //     console.log('BestScore:', content);
+        //     const parsedScore = parseInt(content, 10);
+        // })
+        // .catch(err => {
+        //     console.error('Ошибка чтения файла:', err);
+        // });
+        loadBestScore();
+        Orientation.lockToPortrait();
+        return ()=> Orientation.unlockAllOrientations();
+    },[]);
+
+    const saveBestScore = () =>{
+        const path = RNFS.DocumentDirectoryPath + bestScoreFileName;
+        console.log(path);
+        return RNFS
+            .writeFile(path, bestScore.toString(), 'utf8')
+            .then(()=>{console.log("save is OK")})
+            // .catch(err => console.error(err));
+    };
+    const loadBestScore =() =>{
+        const path = RNFS.DocumentDirectoryPath + bestScoreFileName;
+        return RNFS.readFile(path, 'utf8')
+        .then(content => {
+            console.log('BestScore:', content);
+            // const parsedScore = parseInt(content, 10);
+            setBestScore(Number(content));
+        })
+        // .catch(err => {
+        //     console.error('Ошибка чтения файла:', err);
+        // });
+    };
 
     // START GAME
     const spawnTile = () =>{
@@ -163,7 +229,87 @@ export default function Game(){
         spawnTile();
         spawnTile();
         setTiles([...tiles]);
+        setScore(0);
     }
+    
+    const canMoveRight = () =>{
+        for(let r=0; r<N; r += 1){
+            for(let c = 1; c<N; c+=1){
+                if( tiles[r*N + c - 1] != 0 && (
+                     tiles[r*N + c - 1] == tiles[r*N + c] || tiles[r*N + c] == 0 )
+                ){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    const canMoveLeft = () => {
+        for (let r = 0; r < N; r++) {
+            for (let c = 0; c < N - 1; c++) {
+                if (tiles[r * N + c + 1] != 0 && (
+                    tiles[r * N + c + 1] == tiles[r * N + c] || tiles[r * N + c] == 0)
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    const canMoveDown = () => {
+        for (let r = 1; r < N; r++) {
+            for (let c = 0; c < N; c++) {
+                if (tiles[(r - 1) * N + c] != 0 && (
+                    tiles[(r - 1) * N + c] == tiles[r * N + c] || tiles[r * N + c] == 0)
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    const canMoveTop = () => {
+        for (let r = 0; r < N - 1; r++) {
+            for (let c = 0; c < N; c++) {
+                if (tiles[(r + 1) * N + c] != 0 && (
+                    tiles[(r + 1) * N + c] == tiles[r * N + c] || tiles[r * N + c] == 0)
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+
+    const saveField = () => {
+        const newState: FieldState = {
+            tiles: [...tiles],
+            score,
+            bestScore,
+        };
+
+        setHistory(prev => {
+            const newHistory = [newState, ...prev];
+            return newHistory.slice(0, maxUndo);
+        });
+    };
+
+    const undoField = () => {
+        setHistory(prev => {
+            if (prev.length === 0) return prev;
+
+            const [lastState, ...rest] = prev;
+            setTiles(lastState.tiles);
+            setScore(lastState.score);
+            setBestScore(lastState.bestScore);
+
+            return rest; // удаляем использованный шаг
+        });
+    };
 
     const moveRight=()=>{
         /*      логика
@@ -175,7 +321,6 @@ export default function Game(){
 
         */
        const N = 4;
-       let res = false;
 
        var collapsedIndexes =[];
 
@@ -186,7 +331,6 @@ export default function Game(){
                     if( tiles[r*N+c] != 0 && tiles[r*N+c+1] ==0){
                         tiles[r*N+c+1] = tiles[r*N+c];
                         tiles[r*N+c] = 0;
-                        res = true;
                     }
                 }
             }
@@ -197,7 +341,6 @@ export default function Game(){
                     tiles[r*N+c-1]=0;
                     setScore(score+tiles[r*N+c]);
                     collapsedIndexes.push(r*N+c);
-                    res = true;
                 }
             }
             //3.Move Right after collapse
@@ -229,8 +372,6 @@ export default function Game(){
     //             ])
     //         )).start();
     //    }
-
-       return res;
     }
 
     const moveLeft=()=>{
@@ -413,8 +554,10 @@ export default function Game(){
             if(Math.abs(dx)>Math.abs(dy)){
                 if(Math.abs(dx)>distanceThreshold){
                     if(dx>0){
-                        if(moveRight()){
-                            setText("Right - OK")
+                        if(canMoveRight()){
+                            saveField();
+                            moveRight();
+                            setText("Right - OK");
                             spawnTile();
                             setTiles([...tiles]);
                         }
@@ -423,7 +566,9 @@ export default function Game(){
                         }
                     }
                     else{
-                         if(moveLeft()){
+                         if(canMoveLeft()){
+                            saveField();
+                            moveLeft()
                             setText("Left - OK")
                             spawnTile();
                             setTiles([...tiles]);
@@ -437,7 +582,9 @@ export default function Game(){
             else{
                 if(Math.abs(dy)>distanceThreshold){
                     if(dy>0){
-                         if(moveDown()){
+                         if(canMoveDown()){
+                            saveField();
+                            moveDown()
                             setText("Down - OK")
                             spawnTile();
                             setTiles([...tiles]);
@@ -459,7 +606,9 @@ export default function Game(){
                         // ]).start(); 
                     }
                     else{
-                        if(moveTop()){
+                        if(canMoveTop()){
+                            saveField();
+                            moveTop()
                             setText("Top - OK")
                             spawnTile();
                             setTiles([...tiles]);
@@ -491,12 +640,12 @@ export default function Game(){
                     </View>
                     <View style={styles.topBlockScore}>
                         <Text style={styles.topBlockScoreText}>BEST</Text>
-                        <Text style={styles.topBlockScoreText}>1005000</Text>
+                        <Text style={styles.topBlockScoreText}>{bestScore}</Text>
                     </View>
                 </View>
                 <View style={styles.topBlockButtons}>
                     <Pressable style={styles.topBlockButton} onPress={newGame}><Text style={styles.topBlockButtonText}>NEW</Text></Pressable>
-                    <Pressable style={styles.topBlockButton}><Text style={styles.topBlockButtonText}>UNDO</Text></Pressable>
+                    <Pressable style={styles.topBlockButton} onPress={undoField}><Text style={styles.topBlockButtonText}>UNDO</Text></Pressable>
                 </View>
             </View>
         </View>
@@ -591,13 +740,11 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
     fontWeight: 700,
-    fontSize: 16
   },
   topBlockButtons: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-
   },
   topBlockButton: {
     backgroundColor: "#E06849",
