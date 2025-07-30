@@ -1,94 +1,133 @@
-import { useContext, useEffect, useState } from "react"
-import { StyleSheet, Text, TextInput, Touchable, TouchableOpacity, View } from "react-native"
+import { useContext, useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import CheckBox from '@react-native-community/checkbox';
+import RNFS from 'react-native-fs';
 import FirmButton from "../../features/buttons/ui/FirmButton";
 import { ButtonTypes } from "../../features/buttons/model/ButtonTypes";
-// import { Base64 } from "../../shared/services/base_64";
-import base64 from 'react-native-base64'; // подключили типы и кодировку // npm i react-native-base64  // npm i @types/react-native-base64
+import base64 from 'react-native-base64';
 import { AppContext } from "../../shared/context/appContext";
 
+export default function Auth() {
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const { request, user, setUser } = useContext(AppContext);
+  const [userName, setUserName] = useState<string | null>(null);
 
-export default function Auth(){
-    const [login, setLogin] = useState("");
-    const [password, setPassword] = useState("");
-    const {request, user, setUser} = useContext(AppContext);
-    const [userName, setUserName] =useState (null as string|null);
+  const tokenPath = RNFS.DocumentDirectoryPath + '/token.txt';
 
-    useEffect(() => {
-      if(user != null){
-        console.log(base64.decode(user.split(".")[1]))
+  useEffect(() => {
+    RNFS.readFile(tokenPath, 'utf8')
+      .then(content => {
+        if (content) {
+          setUser(content);
+        }
+      })
+      .catch(err => {
+        console.log("Token not found:", err.message);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (user != null) {
+      try {
         const payload = base64.decode(user.split(".")[1]);
         const data = JSON.parse(payload);
-        console.log(data.nam);
+        setUserName(data.nam);
+        console.log("Decoded user:", data.nam);
+      } catch (err) {
+        console.error("Token decode error", err);
       }
-        // setUserName(user == null? null 
-        //   : JSON.parse(base64.decode(user.split(".")[1])).nam);
-    }, [user]);
+    }
+  }, [user]);
 
-    const onRequestPress = () => {
-      request("/Cosmos/SignIn");
-    };
+  const onEnterPress = () => {
+    console.log(login, password);
+    request("/Cosmos/SignIn/", {
+      headers: {
+        'Authorization': 'Basic ' + base64.encode(`${login}:${password}`)
+      }
+    }).then(user => {
+      setUser(user);
+      if (remember) {
+        RNFS.writeFile(tokenPath, user, 'utf8')
+          .then(() => console.log("Token saved"))
+          .catch(err => console.error("Token save failed", err));
+      }
+    });
+  };
 
-    const onExitPress = () => {
-      setUser(null);
-    };
+  const onExitPress = () => {
+    setUser(null);
+    RNFS.unlink(tokenPath)
+      .then(() => console.log("Token deleted"))
+      .catch(err => console.log("No token to delete", err.message));
+  };
 
-    const onEnterPress =() =>{
-        console.log(login, password);
-        request("/Cosmos/SignIn/",{
-          headers: {
-            'Authorization': 'Basic ' + base64.encode(`${login}:${password}`)
-            }
-        }).then(setUser);
+  const onRequestPress = () => {
+    request("/Cosmos/SignIn");
+  };
 
-        // fetch("https://pv311num6-b9hbdbfsc3gdbfer.canadacentral-01.azurewebsites.net/Cosmos/SignIn/",{
-        //   headers: {
-        //     'Authorization': 'Basic ' + base64.encode(`${login}:${password}`)
-        //     }
-        // }).then(r=> r.json())
-        // .then(console.log);
-    };
+  const isFormValid = () => login.length > 1 && password.length > 2;
 
-    const isFormValid =() => login.length>1 && password.length > 2
-    
-    const anonView = () =><View>
+  const anonView = () => (
+    <View>
+      <Text style={{ textAlign: "center" }}>AUTH</Text>
 
-        <Text style={{textAlign: "center"}}>AUTH</Text>
-
-        <View style={styles.textInputContainer}>
-            <Text style={styles.textInputTitle}>Login:</Text>
-            <TextInput style={styles.textInput}
-                value={login}
-                onChangeText={setLogin}
-            />
-        </View>
-
-        <View style={styles.textInputContainer}>
-            <Text style={styles.textInputTitle}>Password:</Text>
-            <TextInput style={styles.textInput}
-                secureTextEntry ={true}
-                value={password}
-                onChangeText={setPassword}
-            />
-        </View>
-        <FirmButton type={isFormValid()? ButtonTypes.primary: ButtonTypes.secondary} 
-                action={isFormValid()? onEnterPress : ()=>{}}
-                title={"Enter"} 
+      <View style={styles.textInputContainer}>
+        <Text style={styles.textInputTitle}>Login:</Text>
+        <TextInput
+          style={styles.textInput}
+          value={login}
+          onChangeText={setLogin}
         />
-    </View>;
+      </View>
 
-    const userView = () => <View>
-      <Text style={{textAlign: "center"}}>USER : {userName}</Text>
-      <FirmButton type={ButtonTypes.primary} 
-                action={onRequestPress}
-                title={"Request"} 
+      <View style={styles.textInputContainer}>
+        <Text style={styles.textInputTitle}>Password:</Text>
+        <TextInput
+          style={styles.textInput}
+          secureTextEntry={true}
+          value={password}
+          onChangeText={setPassword}
         />
-            <FirmButton type={ButtonTypes.primary} 
-                action={onExitPress}
-                title={"Exit"} 
-        />
-    </View>;
+      </View>
 
-    return user == null? anonView() :userView();
+      <View style={styles.checkboxContainer}>
+        <CheckBox value={remember} onValueChange={setRemember} />
+        <Text style={styles.checkboxLabel}>Запам’ятати мене</Text>
+      </View>
+
+      <FirmButton
+        type={isFormValid() ? ButtonTypes.primary : ButtonTypes.secondary}
+        action={isFormValid() ? onEnterPress : () => {}}
+        title={"Enter"}
+      />
+    </View>
+  );
+
+  const userView = () => (
+    <View>
+      <Text style={{ textAlign: "center" }}>USER : {userName}</Text>
+      <FirmButton
+        type={ButtonTypes.primary}
+        action={onRequestPress}
+        title={"Request"}
+      />
+      <FirmButton
+        type={ButtonTypes.primary}
+        action={onExitPress}
+        title={"Exit"}
+      />
+    </View>
+  );
+
+  return user == null ? anonView() : userView();
 }
 
 const styles = StyleSheet.create({
@@ -106,9 +145,19 @@ const styles = StyleSheet.create({
     margin: 10,
     backgroundColor: "#807b7bff",
   },
-  textInputTitle:{
+  textInputTitle: {
     color: "#eee",
-    marginLeft:10,
+    marginLeft: 10,
     marginTop: 10,
   },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 10,
+    marginBottom: 10
+  },
+  checkboxLabel: {
+    color: "#eee",
+    marginLeft: 8
+  }
 });
