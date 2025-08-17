@@ -33,6 +33,7 @@ export default function Calc() {
   model.memory = memory;
   }, [result, calculation, history, memory]);
 
+  
   const onMemoryOperationPress = (title:string, data?:string)=>{
     switch(title){
       case "MC" :

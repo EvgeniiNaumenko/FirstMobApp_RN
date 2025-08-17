@@ -11,6 +11,7 @@ class RatesModel {
     rates: Array<NbuRate> = [];
     shownRates: Array<NbuRate> = [];
     searchText: string ="";
+    loadedDate: string | null = null;
 }
 
 export default RatesModel;
