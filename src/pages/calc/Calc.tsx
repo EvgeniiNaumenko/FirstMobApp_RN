@@ -1,17 +1,37 @@
 import { View , StyleSheet, Text, TouchableOpacity, useWindowDimensions, Button} from "react-native";
 import CalcButton from "./components/CalcButton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CalcModel from "./models/CalcModel.ts";
 const maxResultDigits = 5;
 
 export default function Calc() {
   const {width, height}=useWindowDimensions();
-  
-  const [result, setResult] = useState("0");
-  const [memory, setMemory] = useState("0");
-  const [history, setHistory] = useState("");
-  const [calculation, setCalculation] =useState("");
+  const model = CalcModel.instance;
+
+  const [result, setResult] = useState(CalcModel.instance.result);
+  const [memory, setMemory] = useState(CalcModel.instance.memory);
+  const [history, setHistory] = useState(CalcModel.instance.history);
+  const [calculation, setCalculation] =useState(CalcModel.instance.calculation);
+
   const [showMemoryView, setShowMemoryView] = useState(false);
+
+  useEffect(() => {
+    syncFromModel();
+  }, []);
+
+  const syncFromModel = () => {
+    setResult(model.result);
+    setMemory(model.memory)
+    setCalculation(model.calculation);
+    setHistory(model.history);
+  };
+  
+  useEffect(() => {
+  model.result = result;
+  model.calculation = calculation;
+  model.history = history;
+  model.memory = memory;
+  }, [result, calculation, history, memory]);
 
   const onMemoryOperationPress = (title:string, data?:string)=>{
     switch(title){

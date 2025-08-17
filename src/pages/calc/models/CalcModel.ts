@@ -9,15 +9,14 @@ class CalcModel {
     }
 
     result: string = "0";
+    memory: string = "0";
     calculation: string = "";
     history: string = "";
-    memory: string = "0";
 
     reset() {
     this.result = "0";
     this.calculation = "";
     this.history = "";
-    this.memory = "0";
    }
 }
 
