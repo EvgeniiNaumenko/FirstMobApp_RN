@@ -16,7 +16,7 @@ export default function Auth() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
-  const { request, user, setUser } = useContext(AppContext);
+  const { request, user, setUser, showModal } = useContext(AppContext);
   const [userName, setUserName] = useState<string | null>(null);
 
   const tokenPath = RNFS.DocumentDirectoryPath + '/token.txt';
@@ -48,6 +48,14 @@ export default function Auth() {
 
   const onEnterPress = () => {
     console.log(login, password);
+    if(login.length == 0){
+      showModal({title: "Avtorization", message: "Enter Login"})
+      return;
+    }
+    if(password.length == 0){
+      showModal({title: "Avtorization", message: "Enter Password"})
+      return;
+    }
     request("/Cosmos/SignIn/", {
       headers: {
         'Authorization': 'Basic ' + base64.encode(`${login}:${password}`)
@@ -105,7 +113,8 @@ export default function Auth() {
 
       <FirmButton
         type={isFormValid() ? ButtonTypes.primary : ButtonTypes.secondary}
-        action={isFormValid() ? onEnterPress : () => {}}
+        // action={isFormValid() ? onEnterPress : () => {}}
+        action={onEnterPress}
         title={"Enter"}
       />
     </View>

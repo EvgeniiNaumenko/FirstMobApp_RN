@@ -1,10 +1,14 @@
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { BackHandler, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, BackHandler, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Calc from '../pages/calc/Calc';
 import { useEffect, useState } from 'react';
 import Game from '../pages/game/Game';
 import { AppContext } from '../shared/context/appContext';
 import Auth from '../pages/auth/Auth';
+import Rates from '../pages/rates/Rates';
+import Chat from '../pages/chat/Chat';
+import ModelData from '../shared/types/ModalData';
+import ModalView from './ui/ModalView';
 
 function App() {
   /*
@@ -21,6 +25,8 @@ function App() {
   const [page, setPage] = useState("game");
   const [user, setUser] = useState(null as string|null);
   const [history, setHistory] = useState([] as Array<string>);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [modelData, setModalData] = useState({message:""} as ModelData);
 
   const request = (url:string, ini?:any) => {
     if(url.startsWith('/')) {
@@ -56,6 +62,10 @@ function App() {
   }
 
   const navigate = (href:string) => { // добавление в историю и переход
+    if(href == "-1"){
+      popRoute();
+      return;
+    }
     if(href == page){
       return;
     }
@@ -87,17 +97,57 @@ function App() {
       listener.remove();
     };
   }, []);
-
+  //modal window
+  const showModal = (data: ModelData) =>{
+    setModalData(data);
+    setModalVisible(true);
+  }
 
   return (
     <SafeAreaProvider>
       {/* передаем через контекст на все дочерние єлементы */}
-      <AppContext.Provider value={{navigate, user, setUser, request}}>
+      <AppContext.Provider value={{navigate, user, setUser, request, showModal}}>
         <SafeAreaView style={styles.container}>
 
+          <ModalView
+            isModalVisible = {isModalVisible}
+            setModalVisible={setModalVisible}
+            modalData={modelData}
+            />
+
+
+          {/* Модальное окно
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isModalVisible}
+            onRequestClose={() => {
+                Alert.alert('Modal has been closed.');
+                setModalVisible(!isModalVisible);
+              }}>
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Text style={styles.modalText}>{modelData.title}</Text>
+                <Text style={styles.modalText}>{modelData.message}</Text>
+                {!!modelData.positiveButtonText && <Pressable
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => setModalVisible(!isModalVisible)}>
+                  <Text style={styles.textStyle}>{modelData.positiveButtonText}</Text>
+                </Pressable>}
+                {!!modelData.negativeButtonText && <Pressable
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => setModalVisible(!isModalVisible)}>
+                  <Text style={styles.textStyle}>{modelData.negativeButtonText}</Text>
+                </Pressable>}
+              </View>
+            </View>
+          </Modal> */}
+
           <View style={styles.content}>
-            {  page =="calc"? <Calc /> 
-             : page =="auth"? <Auth />
+            {  page =="calc"?  <Calc   /> 
+             : page =="auth"?  <Auth   />
+             : page =="rates"? <Rates  />
+             : page =="chat"?  <Chat   />
              : <Game/>}
           </View>
 
@@ -114,6 +164,16 @@ function App() {
 
             <Pressable onPress={() => navigate("auth")} style={styles.bottomNavItem}>
               <Image source={require("../shared/assets/images/auth.png")} style={styles.bottomNavImages} />
+              {/* <Text style={{color: "#ffffff"}}>Game</Text> */}
+            </Pressable>
+
+            <Pressable onPress={() => navigate("rates")} style={styles.bottomNavItem}>
+              <Image source={require("../shared/assets/images/coin25.png")} style={[styles.bottomNavImages, {width: 34}]} />
+              {/* <Text style={{color: "#ffffff"}}>Game</Text> */}
+            </Pressable>
+
+            <Pressable onPress={() => navigate("chat")} style={styles.bottomNavItem}>
+              <Image source={require("../shared/assets/images/auth.png")} style={[styles.bottomNavImages, {width: 34}]} />
               {/* <Text style={{color: "#ffffff"}}>Game</Text> */}
             </Pressable>
           </View>
@@ -155,7 +215,44 @@ const styles = StyleSheet.create({
     height: 32,
     width: 32,
    },
-
+   // modal window 
+   centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+  },
 });
 
 export default App;

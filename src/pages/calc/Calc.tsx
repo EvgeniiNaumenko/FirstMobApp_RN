@@ -1,11 +1,12 @@
 import { View , StyleSheet, Text, TouchableOpacity, useWindowDimensions, Button} from "react-native";
 import CalcButton from "./components/CalcButton";
 import { useState } from "react";
-
+import CalcModel from "./models/CalcModel.ts";
 const maxResultDigits = 5;
 
 export default function Calc() {
   const {width, height}=useWindowDimensions();
+  
   const [result, setResult] = useState("0");
   const [memory, setMemory] = useState("0");
   const [history, setHistory] = useState("");

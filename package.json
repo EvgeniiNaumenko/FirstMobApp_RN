@@ -18,7 +18,8 @@
     "react-native-base64": "^0.2.1",
     "react-native-fs": "^2.20.0",
     "react-native-orientation-locker": "^1.7.0",
-    "react-native-safe-area-context": "^5.5.1"
+    "react-native-safe-area-context": "^5.5.1",
+    "react-native-ui-datepicker": "^3.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
