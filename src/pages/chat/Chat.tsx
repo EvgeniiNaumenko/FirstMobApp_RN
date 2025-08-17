@@ -8,7 +8,7 @@ export default function Chat() {
         if(user == null){
             showModal({
                 title: "Greeting",
-                message: "Hello BRO",
+                message: "Hello",
                 positiveButtonText: "Enter",
                 positiveButtonAction: () => navigate("auth"),
                 negativeButtonText: "Exit",
