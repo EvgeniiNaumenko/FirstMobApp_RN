@@ -11,6 +11,7 @@ import FirmButton from "../../features/buttons/ui/FirmButton";
 import { ButtonTypes } from "../../features/buttons/model/ButtonTypes";
 import base64 from 'react-native-base64';
 import { AppContext } from "../../shared/context/appContext";
+import {Buffer} from 'buffer';
 
 export default function Auth() {
   const [login, setLogin] = useState("");
@@ -18,6 +19,8 @@ export default function Auth() {
   const [remember, setRemember] = useState(false);
   const { request, user, setUser, showModal } = useContext(AppContext);
   const [userName, setUserName] = useState<string | null>(null);
+  const [isLoading, setLoading] = useState(false);
+
 
   const tokenPath = RNFS.DocumentDirectoryPath + '/token.txt';
 
@@ -25,7 +28,9 @@ export default function Auth() {
     RNFS.readFile(tokenPath, 'utf8')
       .then(content => {
         if (content) {
-          setUser(content);
+          setUser(JSON.parse(
+              Buffer.from(content.split('.')[1], 'base64').toString('utf8')
+            ));
         }
       })
       .catch(err => {
@@ -36,10 +41,8 @@ export default function Auth() {
   useEffect(() => {
     if (user != null) {
       try {
-        const payload = base64.decode(user.split(".")[1]);
-        const data = JSON.parse(payload);
-        setUserName(data.nam);
-        console.log("Decoded user:", data.nam);
+        setUserName(user.nam);
+        console.log("Decoded user:", user.nam);
       } catch (err) {
         console.error("Token decode error", err);
       }
@@ -56,18 +59,33 @@ export default function Auth() {
       showModal({title: "Avtorization", message: "Enter Password"})
       return;
     }
+    setLoading(true);
     request("/Cosmos/SignIn/", {
       headers: {
         'Authorization': 'Basic ' + base64.encode(`${login}:${password}`)
       }
-    }).then(user => {
-      setUser(user);
-      if (remember) {
-        RNFS.writeFile(tokenPath, user, 'utf8')
-          .then(() => console.log("Token saved"))
-          .catch(err => console.error("Token save failed", err));
-      }
-    });
+    }).then(jwt => {
+          // console.log(jwt)
+          let p = Buffer.from(jwt.split('.')[1], 'base64').toString('utf8');
+          console.log(p);
+          let u = JSON.parse(p)
+          //   Buffer.from(jwt.split('.')[1], 'base64').toString('utf8')
+          // )
+          console.log(u)
+          setUser(u)
+        //   setUser(
+        //     JSON.parse(
+        //       Buffer.from(jwt.split('.')[1], 'base64').toString('utf8')
+        //     )
+        // );
+    }).catch(err => {
+      console.log(err)
+      showModal({
+            title: "Авторизация",
+            message: "Ошибка авторизации",
+          });
+    })
+    .finally(()=> setLoading(false));
   };
 
   const onExitPress = () => {
@@ -108,14 +126,14 @@ export default function Auth() {
 
       <View style={styles.checkboxContainer}>
         <CheckBox value={remember} onValueChange={setRemember} />
-        <Text style={styles.checkboxLabel}>Запам’ятати мене</Text>
+        <Text style={styles.checkboxLabel}>Remember me</Text>
       </View>
 
-      <FirmButton
-        type={isFormValid() ? ButtonTypes.primary : ButtonTypes.secondary}
+      <FirmButton 
+        title={isLoading? "...loading" : "Enter"}
+        type={isFormValid() && !isLoading ? ButtonTypes.primary : ButtonTypes.secondary}
+        action={isLoading ? ()=>{}: onEnterPress}
         // action={isFormValid() ? onEnterPress : () => {}}
-        action={onEnterPress}
-        title={"Enter"}
       />
     </View>
   );

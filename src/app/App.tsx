@@ -9,6 +9,7 @@ import Rates from '../pages/rates/Rates';
 import Chat from '../pages/chat/Chat';
 import ModelData from '../shared/types/ModalData';
 import ModalView from './ui/ModalView';
+import User from '../shared/types/User';
 
 function App() {
   /*
@@ -23,7 +24,7 @@ function App() {
   // }
 
   const [page, setPage] = useState("game");
-  const [user, setUser] = useState(null as string|null);
+  const [user, setUser] = useState(null as User|null);
   const [history, setHistory] = useState([] as Array<string>);
   const [isModalVisible, setModalVisible] = useState(false);
   const [modelData, setModalData] = useState({message:""} as ModelData);
@@ -42,6 +43,7 @@ function App() {
       }
       if(typeof ini.headers['Authorization'] == 'undefined') {
         ini.headers['Authorization'] = "Bearer " + user; //.token;
+        // ini.headers['Authorization'] = "Bearer " +   Buffer.from(`${login}:${password}`, 'base64').toString('utf8');
       }
       ini.headers['Authentication-Control'] = "Mobile";
     }
@@ -173,7 +175,7 @@ function App() {
             </Pressable>
 
             <Pressable onPress={() => navigate("chat")} style={styles.bottomNavItem}>
-              <Image source={require("../shared/assets/images/auth.png")} style={[styles.bottomNavImages, {width: 34}]} />
+              <Image source={require("../shared/assets/images/chat.png")} style={[styles.bottomNavImages, {width: 34}]} />
               {/* <Text style={{color: "#ffffff"}}>Game</Text> */}
             </Pressable>
           </View>

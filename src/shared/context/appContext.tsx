@@ -1,10 +1,11 @@
 import { createContext } from "react";
 import ModelData from "../types/ModalData";
+import User from "../types/User";
 
 type AppContextType = {
     navigate: (href: string) => void,
-    user: string|null,
-    setUser: (user: string|null) => void,
+    user: User|null,
+    setUser: (user: User|null) => void,
     request: (url: string, ini?:any) => Promise<any>,
     showModal: (data: ModelData)=> void,
     
@@ -13,7 +14,7 @@ type AppContextType = {
 const init = {
     navigate: (_:string)=> { throw "navigate not implemented!";},
     user: null,
-    setUser: (_: string|null) => {throw "setUser not implemented"},
+    setUser: (_: User|null) => {throw "setUser not implemented"},
     request: (_: string, __:any) => {throw "setUser not implemented"},
     showModal: (_:ModelData)=>{throw "showModal not implemented"}
 }

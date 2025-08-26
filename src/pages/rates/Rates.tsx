@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, Image } from "react-native";
+import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import rateItem from "./components/rateItem";
 import RatesModel from "./models/RatesModel";
 import DateTimePicker, { DateType, useDefaultStyles } from 'react-native-ui-datepicker';
@@ -11,6 +11,7 @@ export default function Rates() {
   const [searchText, setSearchText] = useState(RatesModel.instance.searchText);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const defaultStyles = useDefaultStyles();
+  const [isLoading, setLoading] = useState(false);
   
   const today = new Date();
   const initialDate = RatesModel.instance.loadedDate 
@@ -20,6 +21,7 @@ export default function Rates() {
         Number(RatesModel.instance.loadedDate.slice(6, 8))
         )
         : today;
+
   const [selected, setSelected] = useState<DateType>(initialDate);
 
   const dateObj: Date = selected instanceof Date ? selected
@@ -35,7 +37,6 @@ export default function Rates() {
   const fetchRates = (d: Date) => {
     const { day, month, year } = getRequestDate(d);
     const requestDate = `${year}${month}${day}`;
-
     if (RatesModel.instance.loadedDate === requestDate) {
       console.log("used cache Data");
       setRates(RatesModel.instance.rates);
@@ -52,11 +53,15 @@ export default function Rates() {
         RatesModel.instance.loadedDate = requestDate;
         setRates(j);
       })
-      .catch(err => console.log("Fetch error:", err));
+      .catch(err => console.log("Fetch error:", err))
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchRates(dateObj);
+    setTimeout(() => {
+      setLoading(false)
+    }, 1500);
   }, [selected]);
 
   useEffect(() => {
@@ -75,6 +80,11 @@ export default function Rates() {
 
   return (
     <View style={styles.container}>
+      {isLoading &&
+      <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#07b93dff" style={{margin: "auto", transform: [{scale: 2}]}}></ActivityIndicator>
+      </View>
+      }
       <View style={styles.searchBar}>
         <TouchableOpacity style={styles.searchButton}>
           <Image source={require("../../shared/assets/images/Search_Icon.png")} style={styles.searchButtonImg} />
@@ -128,6 +138,15 @@ const styles = StyleSheet.create({
   container: {
     padding: 10,
     flex: 1,
+  },
+  loader:{
+    position: "absolute",
+    left: 10,
+    top: 10,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#5a5858cc",
+    zIndex: 2,
   },
   searchBar: {
     flexDirection: "row",
